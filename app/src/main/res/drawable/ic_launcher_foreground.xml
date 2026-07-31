@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Helmet Contour & Speed visor -->
+    <path
+        android:pathData="M54,28 C39.5,28 28,39.5 28,54 C28,63.5 33,71.8 40.5,76.5 L36,83 L47,83 C49.2,84.3 51.5,85 54,85 C56.5,85 58.8,84.3 61,83 L72,83 L67.5,76.5 C75,71.8 80,63.5 80,54 C80,39.5 68.5,28 54,28 Z"
+        android:fillColor="#FF334B" />
+
+    <!-- Tinted Speed Visor -->
+    <path
+        android:pathData="M35,46 C35,46 45,41 54,41 C63,41 73,46 73,46 C73,46 71,58 54,58 C37,58 35,46 35,46 Z"
+        android:fillColor="#0B0E11" />
+
+    <path
+        android:pathData="M38,48 C44,45 54,44 54,44 C54,44 64,45 70,48 C68,54 59,55 54,55 C49,55 40,54 38,48 Z"
+        android:fillColor="#FFB000" />
+        
+    <!-- Speed Lines Accent -->
+    <path
+        android:pathData="M24,42 L16,42 M20,54 L12,54 M24,66 L16,66 M84,42 L92,42 M88,54 L96,54 M84,66 L92,66"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+</vector>

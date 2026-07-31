@@ -1,0 +1,6 @@
+{
+  "name": "MotoGrid News Hub",
+  "description": "Ultimate motorcycle news hub with breaking news, MotoGP updates, bike reviews, personal library, and interactive article reader.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
