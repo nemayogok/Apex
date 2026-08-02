@@ -51,14 +51,9 @@ class NewsRepository(
             "https://news.google.com/rss/search?q=motociclismo&hl=es-419&gl=US&ceid=US:es-419",
             "https://news.google.com/rss/search?q=MotoGP&hl=es-419&gl=US&ceid=US:es-419"
         )
-        val fallbackImages = listOf(
-            "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1000&q=80",
-            "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1000&q=80",
-            "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1000&q=80",
-            "https://images.unsplash.com/photo-1558980664-3a031cf67ea8?auto=format&fit=crop&w=1000&q=80"
-        )
-
+        val imgRegex = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
         val newArticles = mutableListOf<ArticleEntity>()
+
         for (feed in feeds) {
             try {
                 val response = apiService.getRssFeed(feed)
@@ -88,37 +83,40 @@ class NewsRepository(
                         }
 
                         val snippet = if (baseText.length > 130) baseText.substring(0, 130) + "..." else baseText
-                        val fallbackImg = fallbackImages[Math.abs(headline.hashCode()) % fallbackImages.size]
-                        val img = item.enclosure?.link?.takeIf { it.isNotBlank() }
+
+                        val extractedImgFromHtml = imgRegex.find(rawContent)?.groupValues?.get(1)
+                        val realImg = item.enclosure?.link?.takeIf { it.isNotBlank() }
                             ?: item.thumbnail?.takeIf { it.isNotBlank() }
-                            ?: fallbackImg
+                            ?: extractedImgFromHtml
+                            ?: ""
 
                         val articleId = if (item.guid.isNotBlank()) item.guid.hashCode().toString() else item.link.hashCode().toString()
-                        val highlights = "Análisis completo y cobertura nativa de la noticia|Declaraciones y datos clave directamente desde el circuito|Impacto en el rendimiento técnico y en la tabla general"
 
-                        newArticles.add(
-                            ArticleEntity(
-                                id = articleId,
-                                title = headline,
-                                subtitle = snippet,
-                                content = fullArticleBody,
-                                category = categoryName,
-                                imageUrl = img,
-                                authorName = item.author?.takeIf { it.isNotBlank() } ?: "Redacción Apex Motociclismo",
-                                authorRole = "Corresponsal Especializado",
-                                authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-                                publishDate = item.pubDate,
-                                readTimeMinutes = (4..8).random(),
-                                isBookmarked = false,
-                                isRead = false,
-                                likesCount = (25..480).random(),
-                                commentsCount = 0,
-                                keyHighlights = highlights,
-                                bikeSpecs = null,
-                                savedTimestamp = System.currentTimeMillis(),
-                                articleUrl = item.link
+                        if (realImg.isNotBlank()) {
+                            newArticles.add(
+                                ArticleEntity(
+                                    id = articleId,
+                                    title = headline,
+                                    subtitle = snippet,
+                                    content = fullArticleBody,
+                                    category = categoryName,
+                                    imageUrl = realImg,
+                                    authorName = item.author?.takeIf { it.isNotBlank() } ?: "Redacción Apex Motociclismo",
+                                    authorRole = "Corresponsal Especializado",
+                                    authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+                                    publishDate = item.pubDate,
+                                    readTimeMinutes = (4..8).random(),
+                                    isBookmarked = false,
+                                    isRead = false,
+                                    likesCount = (25..480).random(),
+                                    commentsCount = 0,
+                                    keyHighlights = "",
+                                    bikeSpecs = null,
+                                    savedTimestamp = System.currentTimeMillis(),
+                                    articleUrl = item.link
+                                )
                             )
-                        )
+                        }
                     }
                 }
             } catch (e: Exception) {

@@ -340,7 +340,11 @@ fun ArticleDetailScreen(
                     ) {
                         Surface(
                             color = ApexRed,
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.clickable {
+                                viewModel.selectCategory(article.category)
+                                onBackClick()
+                            }
                         ) {
                             Text(
                                 text = article.category.uppercase(),
@@ -416,49 +420,6 @@ fun ArticleDetailScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ApexCyan
                             )
-                        }
-                    }
-                }
-            }
-
-            // Resumen Apex Key Highlights Box
-            if (keyHighlightsList.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = ApexCard),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ApexAmber.copy(alpha = 0.6f)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "RESUMEN EJECUTIVO APEX",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                ),
-                                color = ApexAmber
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            keyHighlightsList.forEach { highlight ->
-                                Row(
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Text(
-                                        text = "⚡",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Text(
-                                        text = highlight,
-                                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
-                                        color = ApexTextPrimary
-                                    )
-                                }
-                            }
                         }
                     }
                 }
