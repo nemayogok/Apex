@@ -353,22 +353,8 @@ fun ApexFeedScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Timer,
-                                                contentDescription = null,
-                                                tint = ApexAmber,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "${heroArticle.readTimeMinutes} min de lectura",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = ApexTextSecondary
-                                            )
-                                        }
                                         Text(
-                                            text = "• ${heroArticle.publishDate}",
+                                            text = heroArticle.publishDate,
                                             style = MaterialTheme.typography.bodySmall,
                                             color = ApexTextSecondary
                                         )
@@ -477,11 +463,7 @@ fun ApexFeedScreen(
                                                     color = ApexTextSecondary
                                                 )
                                             }
-                                            Text(
-                                                text = "${article.readTimeMinutes} min",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = ApexTextSecondary
-                                            )
+
                                         }
                                     }
                                 }
@@ -640,11 +622,7 @@ fun ArticleListCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = ApexTextSecondary
                     )
-                    Text(
-                        text = "${article.readTimeMinutes} min",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ApexAmber
-                    )
+
                 }
             }
         }

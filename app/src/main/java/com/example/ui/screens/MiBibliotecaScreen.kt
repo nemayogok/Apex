@@ -359,11 +359,7 @@ fun MiBibliotecaScreen(
                                     )
                                 }
 
-                                Text(
-                                    text = "${article.readTimeMinutes} min lect.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = ApexTextSecondary
-                                )
+
                             }
                         }
                     }

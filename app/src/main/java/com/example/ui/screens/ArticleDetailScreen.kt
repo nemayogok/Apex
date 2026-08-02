@@ -412,12 +412,6 @@ fun ArticleDetailScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = ApexTextSecondary
                         )
-
-                        Text(
-                            text = "• ${article.readTimeMinutes} min de lectura",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = ApexAmber
-                        )
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
