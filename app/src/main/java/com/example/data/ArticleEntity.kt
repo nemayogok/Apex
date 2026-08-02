@@ -22,5 +22,6 @@ data class ArticleEntity(
     val commentsCount: Int = 0,
     val keyHighlights: String = "", // Delimited by "|"
     val bikeSpecs: String? = null,  // Format "Label: Value|Label: Value"
-    val savedTimestamp: Long = 0L
+    val savedTimestamp: Long = 0L,
+    val articleUrl: String = ""
 )

@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -105,6 +107,16 @@ fun ArticleDetailScreen(
             Text("Cargando noticia Apex...", color = ApexTextSecondary)
         }
         return
+    }
+
+    val openArticleUrl = {
+        val targetUrl = article?.articleUrl?.ifBlank { null } ?: "https://es.motorsport.com/motogp/news/"
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl))
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     val keyHighlightsList = article.keyHighlights.split("|").filter { it.isNotBlank() }
@@ -216,10 +228,24 @@ fun ArticleDetailScreen(
                             }
 
                             IconButton(
+                                onClick = { openArticleUrl() },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(ApexDark.copy(alpha = 0.7f), CircleShape)
+                                    .testTag("detail_open_web_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                    contentDescription = "Seguir Leyendo",
+                                    tint = ApexRed
+                                )
+                            }
+
+                            IconButton(
                                 onClick = {
                                     val sendIntent = Intent().apply {
                                         action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, "${article.title}\nhttps://motogrid.apex/article/${article.id}")
+                                        putExtra(Intent.EXTRA_TEXT, "${article.title}\n${article.articleUrl.ifBlank { "https://es.motorsport.com/motogp/news/" }}")
                                         type = "text/plain"
                                     }
                                     val shareIntent = Intent.createChooser(sendIntent, "Compartir Noticia Apex")
@@ -516,6 +542,47 @@ fun ArticleDetailScreen(
                             color = ApexTextPrimary,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Seguir Leyendo Action Card
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                            .clickable { openArticleUrl() },
+                        colors = CardDefaults.cardColors(containerColor = ApexRed.copy(alpha = 0.15f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ApexRed),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "📖 SEGUIR LEYENDO EN LA WEB",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Toca aquí para ver el artículo completo, fotos extra y cobertura original.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = ApexTextSecondary
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                contentDescription = "Abrir en navegador",
+                                tint = ApexRed,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

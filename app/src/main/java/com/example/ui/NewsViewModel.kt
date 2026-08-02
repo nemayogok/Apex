@@ -166,9 +166,14 @@ class NewsViewModel(
     fun refreshFeed() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            kotlinx.coroutines.delay(1000)
-            _isRefreshing.value = false
-            _userMessage.value = "Noticias actualizadas"
+            try {
+                repository.refreshNews()
+                _userMessage.value = "¡Noticias actualizadas con éxito!"
+            } catch (e: Exception) {
+                _userMessage.value = "Error al actualizar noticias"
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
 
