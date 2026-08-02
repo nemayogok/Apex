@@ -2,6 +2,10 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
+import androidx.compose.runtime.DisposableEffect
+import java.util.Locale
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.ui.viewinterop.AndroidView
@@ -100,8 +104,38 @@ fun ArticleDetailScreen(
     val context = LocalContext.current
     var isFontControlsOpen by remember { mutableStateOf(false) }
     var isAudioPlaying by remember { mutableStateOf(false) }
+    var ttsEngine by remember { mutableStateOf<TextToSpeech?>(null) }
     var commentAuthorText by remember { mutableStateOf("") }
     var commentBodyText by remember { mutableStateOf("") }
+
+    DisposableEffect(context, article?.id) {
+        val tts = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = ttsEngine?.setLanguage(Locale("es", "ES"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    ttsEngine?.setLanguage(Locale.getDefault())
+                }
+            }
+        }
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                isAudioPlaying = true
+            }
+            override fun onDone(utteranceId: String?) {
+                isAudioPlaying = false
+            }
+            override fun onError(utteranceId: String?) {
+                isAudioPlaying = false
+            }
+        })
+        ttsEngine = tts
+
+        onDispose {
+            tts.stop()
+            tts.shutdown()
+            isAudioPlaying = false
+        }
+    }
 
     if (article == null) {
         Box(
@@ -167,7 +201,11 @@ fun ArticleDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = onBackClick,
+                            onClick = {
+                                ttsEngine?.stop()
+                                isAudioPlaying = false
+                                onBackClick()
+                            },
                             modifier = Modifier
                                 .size(40.dp)
                                 .background(ApexDark.copy(alpha = 0.7f), CircleShape)
@@ -182,7 +220,22 @@ fun ArticleDetailScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             IconButton(
-                                onClick = { isAudioPlaying = !isAudioPlaying },
+                                onClick = {
+                                    val tts = ttsEngine
+                                    if (tts != null) {
+                                        if (isAudioPlaying) {
+                                            tts.stop()
+                                            isAudioPlaying = false
+                                        } else {
+                                            val fullSpeechText = "${article.title}. ${article.subtitle}. ${article.content}"
+                                            val params = android.os.Bundle().apply {
+                                                putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "ApexUtterance")
+                                            }
+                                            tts.speak(fullSpeechText, TextToSpeech.QUEUE_FLUSH, params, "ApexUtterance")
+                                            isAudioPlaying = true
+                                        }
+                                    }
+                                },
                                 modifier = Modifier
                                     .size(40.dp)
                                     .background(ApexDark.copy(alpha = 0.7f), CircleShape)
@@ -389,39 +442,7 @@ fun ArticleDetailScreen(
                         color = ApexTextSecondary
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Author Header Card
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(ApexCard, RoundedCornerShape(12.dp))
-                            .border(1.dp, ApexCardBorder, RoundedCornerShape(12.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AsyncImage(
-                            model = article.authorAvatarUrl,
-                            contentDescription = article.authorName,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = article.authorName,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = ApexTextPrimary
-                            )
-                            Text(
-                                text = article.authorRole,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = ApexCyan
-                            )
-                        }
-                    }
                 }
             }
 
