@@ -100,7 +100,6 @@ fun ArticleDetailScreen(
     val context = LocalContext.current
     var isFontControlsOpen by remember { mutableStateOf(false) }
     var isAudioPlaying by remember { mutableStateOf(false) }
-    var isFullWebViewActive by remember { mutableStateOf(false) }
     var commentAuthorText by remember { mutableStateOf("") }
     var commentBodyText by remember { mutableStateOf("") }
 
@@ -116,98 +115,8 @@ fun ArticleDetailScreen(
         return
     }
 
-    val openArticleUrl = {
-        val targetUrl = article?.articleUrl?.ifBlank { null } ?: "https://es.motorsport.com/motogp/news/"
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl))
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     val keyHighlightsList = article.keyHighlights.split("|").filter { it.isNotBlank() }
     val bikeSpecsList = article.bikeSpecs?.split("|")?.filter { it.isNotBlank() } ?: emptyList()
-
-    if (isFullWebViewActive) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(ApexDark)
-                .testTag("in_app_webview_screen")
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ApexCard)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    IconButton(
-                        onClick = { isFullWebViewActive = false },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Volver",
-                            tint = Color.White
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            text = "🌐 NOTICIA COMPLETA EN LA APP",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = ApexRed
-                        )
-                        Text(
-                            text = article.title,
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = ApexTextPrimary,
-                            maxLines = 1
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = { openArticleUrl() },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = "Navegador Externo",
-                        tint = ApexTextSecondary
-                    )
-                }
-            }
-
-            val targetWebUrl = article.articleUrl.ifBlank { "https://es.motorsport.com/motogp/news/" }
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        webViewClient = WebViewClient()
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.loadWithOverviewMode = true
-                        settings.useWideViewPort = true
-                        loadUrl(targetWebUrl)
-                    }
-                },
-                update = { webView ->
-                    if (webView.url != targetWebUrl) {
-                        webView.loadUrl(targetWebUrl)
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        return
-    }
 
     Box(
         modifier = modifier
@@ -311,20 +220,6 @@ fun ArticleDetailScreen(
                                     imageVector = if (article.isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                     contentDescription = "Guardar",
                                     tint = if (article.isBookmarked) ApexAmber else Color.White
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { isFullWebViewActive = true },
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(ApexDark.copy(alpha = 0.7f), CircleShape)
-                                    .testTag("detail_open_web_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Language,
-                                    contentDescription = "Leer Noticia Completa en la App",
-                                    tint = ApexCyan
                                 )
                             }
 
@@ -633,46 +528,7 @@ fun ArticleDetailScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Leer Noticia Completa en la App Action Card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp)
-                            .clickable { isFullWebViewActive = true },
-                        colors = CardDefaults.cardColors(containerColor = ApexRed.copy(alpha = 0.18f)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ApexRed),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "📄 LEER NOTICIA COMPLETA EN LA APP",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Toca aquí para desplegar la publicación completa de la fuente original sin salir de Apex.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = ApexTextSecondary
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.Article,
-                                contentDescription = "Ver Noticia Completa",
-                                tint = ApexRed,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Like & Reaction Row
                     Row(
