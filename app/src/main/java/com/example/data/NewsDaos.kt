@@ -14,6 +14,12 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY publishDate DESC")
     suspend fun getAllArticlesOnce(): List<ArticleEntity>
 
+    @Query("SELECT LOWER(title) FROM articles")
+    suspend fun getAllTitlesOnce(): List<String>
+
+    @Query("DELETE FROM articles WHERE id NOT IN (SELECT MIN(id) FROM articles GROUP BY LOWER(title))")
+    suspend fun deleteDuplicates()
+
     @Query("SELECT * FROM articles WHERE isBookmarked = 1 ORDER BY savedTimestamp DESC")
     fun getBookmarkedArticles(): Flow<List<ArticleEntity>>
 

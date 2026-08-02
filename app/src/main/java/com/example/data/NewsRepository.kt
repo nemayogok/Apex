@@ -45,6 +45,13 @@ class NewsRepository(
         commentDao.likeComment(commentId)
     }
 
+    private fun normalizeTitle(title: String): String {
+        return title.lowercase()
+            .replace(Regex("""\s*[-|–].*"""), "")
+            .replace(Regex("""[^a-z0-9áéíóúñ]"""), "")
+            .trim()
+    }
+
     suspend fun refreshNews() {
         val feeds = listOf(
             "https://es.motorsport.com/rss/motogp/news/",
@@ -57,6 +64,7 @@ class NewsRepository(
             "https://news.google.com/rss/search?q=motos+prueba+review+test&hl=es-419&gl=US&ceid=US:es-419"
         )
         val imgRegex = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+        val existingTitles = articleDao.getAllTitlesOnce().map { normalizeTitle(it) }.toMutableSet()
         val newArticles = mutableListOf<ArticleEntity>()
 
         for (feed in feeds) {
@@ -64,12 +72,19 @@ class NewsRepository(
                 val response = apiService.getRssFeed(feed)
                 if (response.status == "ok") {
                     response.items.forEachIndexed { index, item ->
+                        val headline = item.title
+                        val normTitle = normalizeTitle(headline)
+
+                        // Strict deduplication check
+                        if (normTitle.length < 5 || existingTitles.contains(normTitle)) {
+                            return@forEachIndexed
+                        }
+
                         val rawContent = item.content.ifBlank { item.description }
                         val baseText = Html.fromHtml(rawContent, Html.FROM_HTML_MODE_COMPACT).toString()
                             .replace(Regex("(?i)Sigue leyendo.*"), "")
                             .trim()
 
-                        val headline = item.title
                         val lowerTitle = headline.lowercase()
 
                         val categoryName = when {
@@ -118,6 +133,8 @@ class NewsRepository(
                             return@forEachIndexed
                         }
 
+                        existingTitles.add(normTitle)
+
                         // Generate complete native multi-paragraph article body
                         val fullArticleBody = buildString {
                             append(baseText.ifBlank { headline })
@@ -164,6 +181,7 @@ class NewsRepository(
 
         if (newArticles.isNotEmpty()) {
             articleDao.insertArticles(newArticles)
+            articleDao.deleteDuplicates()
         }
     }
 
@@ -172,9 +190,14 @@ class NewsRepository(
             "https://news.google.com/rss/search?q=Marc+Marquez+Ducati&hl=es-419&gl=US&ceid=US:es-419",
             "https://news.google.com/rss/search?q=Pedro+Acosta+KTM&hl=es-419&gl=US&ceid=US:es-419",
             "https://news.google.com/rss/search?q=Jorge+Martin+Aprilia&hl=es-419&gl=US&ceid=US:es-419",
-            "https://news.google.com/rss/search?q=Yamaha+Honda+Kawasaki+BMW+motos&hl=es-419&gl=US&ceid=US:es-419"
+            "https://news.google.com/rss/search?q=Yamaha+R1+R6+R9&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Ducati+Panigale+V4&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Kawasaki+Ninja+ZX10R&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=BMW+S1000RR&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Harley+Davidson+motos&hl=es-419&gl=US&ceid=US:es-419"
         )
         val imgRegex = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+        val existingTitles = articleDao.getAllTitlesOnce().map { normalizeTitle(it) }.toMutableSet()
         val moreArticles = mutableListOf<ArticleEntity>()
 
         for (feed in extraQueries) {
@@ -182,6 +205,14 @@ class NewsRepository(
                 val response = apiService.getRssFeed(feed)
                 if (response.status == "ok") {
                     response.items.forEach { item ->
+                        val headline = item.title
+                        val normTitle = normalizeTitle(headline)
+
+                        // Strict deduplication check
+                        if (normTitle.length < 5 || existingTitles.contains(normTitle)) {
+                            return@forEach
+                        }
+
                         val rawContent = item.content.ifBlank { item.description }
                         val extractedImg = imgRegex.find(rawContent)?.groupValues?.get(1)
                         val realImg = item.enclosure?.link?.takeIf { it.isNotBlank() }
@@ -190,8 +221,8 @@ class NewsRepository(
                             ?: ""
 
                         if (realImg.isNotBlank()) {
+                            existingTitles.add(normTitle)
                             val baseText = Html.fromHtml(rawContent, Html.FROM_HTML_MODE_COMPACT).toString().trim()
-                            val headline = item.title
                             val categoryName = if (headline.contains("MotoGP", ignoreCase = true)) "MotoGP" else "Reviews"
                             val snippet = if (baseText.length > 130) baseText.substring(0, 130) + "..." else baseText
                             val articleId = "more_${item.link.hashCode()}_${System.currentTimeMillis()}"
@@ -229,18 +260,7 @@ class NewsRepository(
 
         if (moreArticles.isNotEmpty()) {
             articleDao.insertArticles(moreArticles)
-        } else {
-            // Infinite pagination backup loop using existing articles with real images
-            val currentArticles = articleDao.getAllArticlesOnce()
-            val duplicatedPool = currentArticles.filter { it.imageUrl.isNotBlank() }.mapIndexed { idx, art ->
-                art.copy(
-                    id = "infinite_${art.id}_${System.currentTimeMillis()}_$idx",
-                    savedTimestamp = System.currentTimeMillis() - ((idx + 1) * 3600000L)
-                )
-            }
-            if (duplicatedPool.isNotEmpty()) {
-                articleDao.insertArticles(duplicatedPool)
-            }
+            articleDao.deleteDuplicates()
         }
     }
 
