@@ -11,6 +11,9 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY publishDate DESC")
     fun getAllArticles(): Flow<List<ArticleEntity>>
 
+    @Query("SELECT * FROM articles ORDER BY publishDate DESC")
+    suspend fun getAllArticlesOnce(): List<ArticleEntity>
+
     @Query("SELECT * FROM articles WHERE isBookmarked = 1 ORDER BY savedTimestamp DESC")
     fun getBookmarkedArticles(): Flow<List<ArticleEntity>>
 

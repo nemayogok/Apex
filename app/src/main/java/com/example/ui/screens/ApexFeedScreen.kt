@@ -49,8 +49,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
@@ -93,6 +96,21 @@ fun ApexFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val categories = listOf("Todos", "MotoGP", "Reviews", "Industry News")
 
+    val lazyListState = rememberLazyListState()
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val totalItems = lazyListState.layoutInfo.totalItemsCount
+            val lastVisibleIndex = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisibleIndex >= totalItems - 3
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.loadMoreArticles()
+        }
+    }
+
     val heroArticle = articles.firstOrNull()
     val trendingArticles = articles.drop(1).take(3)
     val remainingArticles = if (heroArticle != null) articles.drop(4) else articles
@@ -103,6 +121,7 @@ fun ApexFeedScreen(
         modifier = modifier.fillMaxSize().background(ApexDark)
     ) {
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier
                 .fillMaxSize()
                 .testTag("apex_feed_screen"),

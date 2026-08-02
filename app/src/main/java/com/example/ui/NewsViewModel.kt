@@ -110,6 +110,12 @@ class NewsViewModel(
         _selectedCategory.value = category
     }
 
+    fun loadMoreArticles() {
+        viewModelScope.launch {
+            repository.loadMoreArticles()
+        }
+    }
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
     }

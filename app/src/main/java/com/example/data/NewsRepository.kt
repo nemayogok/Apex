@@ -167,6 +167,83 @@ class NewsRepository(
         }
     }
 
+    suspend fun loadMoreArticles() {
+        val extraQueries = listOf(
+            "https://news.google.com/rss/search?q=Marc+Marquez+Ducati&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Pedro+Acosta+KTM&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Jorge+Martin+Aprilia&hl=es-419&gl=US&ceid=US:es-419",
+            "https://news.google.com/rss/search?q=Yamaha+Honda+Kawasaki+BMW+motos&hl=es-419&gl=US&ceid=US:es-419"
+        )
+        val imgRegex = Regex("""<img[^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+        val moreArticles = mutableListOf<ArticleEntity>()
+
+        for (feed in extraQueries) {
+            try {
+                val response = apiService.getRssFeed(feed)
+                if (response.status == "ok") {
+                    response.items.forEach { item ->
+                        val rawContent = item.content.ifBlank { item.description }
+                        val extractedImg = imgRegex.find(rawContent)?.groupValues?.get(1)
+                        val realImg = item.enclosure?.link?.takeIf { it.isNotBlank() }
+                            ?: item.thumbnail?.takeIf { it.isNotBlank() }
+                            ?: extractedImg?.takeIf { it.isNotBlank() }
+                            ?: ""
+
+                        if (realImg.isNotBlank()) {
+                            val baseText = Html.fromHtml(rawContent, Html.FROM_HTML_MODE_COMPACT).toString().trim()
+                            val headline = item.title
+                            val categoryName = if (headline.contains("MotoGP", ignoreCase = true)) "MotoGP" else "Reviews"
+                            val snippet = if (baseText.length > 130) baseText.substring(0, 130) + "..." else baseText
+                            val articleId = "more_${item.link.hashCode()}_${System.currentTimeMillis()}"
+
+                            moreArticles.add(
+                                ArticleEntity(
+                                    id = articleId,
+                                    title = headline,
+                                    subtitle = snippet,
+                                    content = baseText + "\n\nAnalizamos detalladamente todos los componentes técnicos y las novedades de esta jornada deportiva de motociclismo.",
+                                    category = categoryName,
+                                    imageUrl = realImg,
+                                    authorName = "Corresponsal Apex",
+                                    authorRole = "Especialista Motor",
+                                    authorAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+                                    publishDate = item.pubDate,
+                                    readTimeMinutes = 5,
+                                    isBookmarked = false,
+                                    isRead = false,
+                                    likesCount = (10..300).random(),
+                                    commentsCount = 0,
+                                    keyHighlights = "",
+                                    bikeSpecs = null,
+                                    savedTimestamp = System.currentTimeMillis() - (moreArticles.size * 60000L),
+                                    articleUrl = item.link
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        if (moreArticles.isNotEmpty()) {
+            articleDao.insertArticles(moreArticles)
+        } else {
+            // Infinite pagination backup loop using existing articles with real images
+            val currentArticles = articleDao.getAllArticlesOnce()
+            val duplicatedPool = currentArticles.filter { it.imageUrl.isNotBlank() }.mapIndexed { idx, art ->
+                art.copy(
+                    id = "infinite_${art.id}_${System.currentTimeMillis()}_$idx",
+                    savedTimestamp = System.currentTimeMillis() - ((idx + 1) * 3600000L)
+                )
+            }
+            if (duplicatedPool.isNotEmpty()) {
+                articleDao.insertArticles(duplicatedPool)
+            }
+        }
+    }
+
     suspend fun seedInitialDataIfEmpty() {
         if (articleDao.getArticleCount() == 0) {
             refreshNews()
